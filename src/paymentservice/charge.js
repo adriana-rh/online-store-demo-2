@@ -46,6 +46,13 @@ class UnacceptedCreditCard extends CreditCardError {
   }
 }
 
+class MissingAmount extends Error {
+  constructor () {
+    super('Charge amount is missing');
+    this.code = 400; // Invalid argument error
+  }
+}
+
 class ExpiredCreditCard extends CreditCardError {
   constructor (number, month, year) {
     super(`Your credit card (ending ${number.substr(-4)}) expired on ${month}/${year}`);
@@ -60,12 +67,16 @@ class ExpiredCreditCard extends CreditCardError {
  */
 module.exports = function charge (request) {
   const { amount, credit_card: creditCard } = request;
+  if (!creditCard) { throw new InvalidCreditCard(); }
+  if (!amount) { throw new MissingAmount(); }
   const cardNumber = creditCard.credit_card_number;
-  const cardInfo = cardValidator(cardNumber);
-  const {
-    card_type: cardType,
-    valid
-  } = cardInfo.getCardDetails();
+  let cardType, valid;
+  try {
+    ({ card_type: cardType, valid } = cardValidator(cardNumber).getCardDetails());
+  } catch (err) {
+    // simple-card-validator throws a bare string for empty or missing numbers.
+    throw new InvalidCreditCard();
+  }
 
   if (!valid) { throw new InvalidCreditCard(); }
 
