@@ -61,6 +61,15 @@ jobs:
       timeout-minutes: 10
       run: |
         dotnet test src/cartservice/
+    - uses: actions/setup-node@v7
+      with:
+        node-version: '24'
+    - name: Node.js Unit Tests
+      timeout-minutes: 10
+      run: |
+        cd src/paymentservice
+        npm ci
+        npm run test:coverage
     - name: Save PR Number
       run: |
         mkdir -p .pr
